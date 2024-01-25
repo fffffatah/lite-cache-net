@@ -2,10 +2,8 @@
 
 public static class StoreServiceExtension
 {
-    public static IServiceCollection AddStoreService(this IServiceCollection service)
+    public static void AddStoreService(this IServiceCollection service)
     {
         service.AddSingleton<IStoreService, StoreService>();
-
-        return service;
     }
 }

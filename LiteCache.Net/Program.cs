@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using LiteCache.Net;
+using LiteCache.Net.Constants;
 using LiteCache.Net.SessionManager;
 using LiteCache.Net.Store;
 using Microsoft.AspNetCore.Mvc;
@@ -10,39 +12,59 @@ builder.Configuration.AddJsonFile("appsettings.Development.json", optional: fals
 builder.Configuration.GetSection("CacheConfigs").Bind(new Configs());
 
 builder.Services.AddStoreService();
-builder.Services.AddSessionManagerService();
+//builder.Services.AddSessionManagerService();
 
 var app = builder.Build();
 
-app.MapPost("/set", async ([FromBody]RequestBody requestBody, IStoreService storeService) =>
+app.MapPost("/set", async ([FromBody, Required]RequestBody requestBody, IStoreService storeService) =>
 {
-    if (requestBody.Key is not null && requestBody.Value is not null)
-        return Results.BadRequest();
+    if (requestBody.Key is null || requestBody.Value is null)
+        return Results.BadRequest(ResponseConstants.ValidationError);
         
-    return await storeService.SetAsync(requestBody.Key, requestBody.Value) ? Results.Ok() : Results.BadRequest();
-});
+    return await storeService.SetAsync(requestBody.Key, requestBody.Value) ? Results.Ok(ResponseConstants.Ok) : Results.BadRequest(ResponseConstants.Error);
+})
+.Produces(200);
 
-app.MapGet("/get/{key}", async (string key, IStoreService storeService) =>
+app.MapGet("/get/{key}", async ([FromRoute, Required]string? key, IStoreService storeService) =>
 {
+    if (key is null)
+        return Results.BadRequest(ResponseConstants.ValidationError);
+    
     var response = await storeService.GetAsync(key);
 
-    return (response is not null) ? Results.Ok(response) : Results.BadRequest();
-});
+    return (!string.IsNullOrEmpty(response)) ? Results.Ok(response) : Results.BadRequest(ResponseConstants.Error);
+})
+.Produces(200);
 
-app.MapGet("/update", async ([FromBody]RequestBody requestBody, string key, IStoreService storeService) =>
+app.MapPut("/update/{key}", async ([FromBody, Required]RequestBody requestBody, [FromRoute, Required]string? key, IStoreService storeService) =>
 {
+    if (requestBody.Key is null || requestBody.Value is null || key is null)
+        return Results.BadRequest(ResponseConstants.ValidationError);
+    
     var oldValue = await storeService.GetAsync(requestBody.Key);
     var response = await storeService.UpdateAsync(key, oldValue, requestBody.Value);
 
-    return response ? Results.Ok() : Results.BadRequest();
-});
+    return response ? Results.Ok(ResponseConstants.Ok) : Results.BadRequest(ResponseConstants.Error);
+})
+.Produces(200);
+    
 
-app.MapGet("/exists/{key}", async (string key, IStoreService storeService) =>
-    await storeService.ExistsAsync(key) ? Results.Ok() : Results.NotFound()
-);
+app.MapGet("/exists/{key}", async ([FromRoute, Required] string? key, IStoreService storeService) =>
+    {
+        if (key is null)
+            return Results.BadRequest(ResponseConstants.ValidationError);
+        
+        return await storeService.ExistsAsync(key) ? Results.Ok(true) : Results.NotFound(false);
+    })
+.Produces(200);
 
-app.MapGet("/delete/{key}", async (string key, IStoreService storeService) =>
-    await storeService.DeleteAsync(key) ? Results.Ok() : Results.BadRequest()
-);
+app.MapDelete("/delete/{key}", async ([FromRoute, Required] string? key, IStoreService storeService) =>
+    {
+        if (key is null)
+            return Results.BadRequest(ResponseConstants.ValidationError);
+        
+        return await storeService.DeleteAsync(key) ? Results.Ok(ResponseConstants.Ok) : Results.BadRequest(ResponseConstants.Error);
+    })
+.Produces(200);
 
 app.Run();

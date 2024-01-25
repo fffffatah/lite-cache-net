@@ -2,10 +2,8 @@
 
 public static class SessionManagerServiceExtension
 {
-    public static IServiceCollection AddSessionManagerService(this IServiceCollection service)
+    public static void AddSessionManagerService(this IServiceCollection service)
     {
         service.AddSingleton<ISessionManager, SessionManager>();
-
-        return service;
     }
 }

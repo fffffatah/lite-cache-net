@@ -2,16 +2,11 @@
 
 namespace LiteCache.Net.SessionManager;
 
-public class SessionManager : ISessionManager
+public class SessionManager(Configs configs) : ISessionManager
 {
-    private readonly Configs _configs;
+    private readonly Configs _configs = configs ?? throw new ArgumentNullException(nameof(configs));
     private readonly ConcurrentDictionary<string, DateTime> _sessions = new();
-    
-    public SessionManager(Configs configs)
-    {
-        _configs = configs ?? throw new ArgumentNullException(nameof(configs));
-    }
-    
+
     public async Task<bool> Validate(string id)
     {
         return await Task.Run(() =>
