@@ -20,7 +20,7 @@ app.MapPost("/set", async ([FromBody]RequestBody requestBody, IStoreService stor
         return Results.BadRequest();
         
     return await storeService.SetAsync(requestBody.Key, requestBody.Value) ? Results.Ok() : Results.BadRequest();
-}).Accepts<RequestBody>("application/json");
+});
 
 app.MapGet("/get/{key}", async (string key, IStoreService storeService) =>
 {
@@ -35,7 +35,7 @@ app.MapGet("/update", async ([FromBody]RequestBody requestBody, string key, ISto
     var response = await storeService.UpdateAsync(key, oldValue, requestBody.Value);
 
     return response ? Results.Ok() : Results.BadRequest();
-}).Accepts<RequestBody>("application/json");
+});
 
 app.MapGet("/exists/{key}", async (string key, IStoreService storeService) =>
     await storeService.ExistsAsync(key) ? Results.Ok() : Results.NotFound()
